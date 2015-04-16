@@ -20,10 +20,16 @@
 # Global Imports
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import sys,os
+import os.path
 import operator
 import datetime
+import pylab
+import scipy.spatial
+
 import numpy  as np
 import pandas as pd
+import matplotlib.pyplot as plt
+
 
 from matplotlib.dates import num2date,date2num 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,6 +38,13 @@ from matplotlib.dates import num2date,date2num
 #
 
 class SwanIO:
+
+	def iocheck(self,fname):
+		io = os.path.isfile(fname)
+		if io:
+			pass
+		else:
+			raise IOError('File {0} not found.'.format(fname)) 
 
 	def read_swantable(self,fname,headers=[]):
 
@@ -54,8 +67,12 @@ class SwanIO:
 			The function will return a pandas DataFrame.
 		"""
 		
+		# I/O check
+		self.iocheck(fname)
+
+		f=open(fname,'r').readlines()
+
 		dates=[]
-		f = open(fname,'r').readlines()
 	
 		if headers:
 			# Handle times
@@ -84,20 +101,47 @@ class SwanIO:
 			return df
 
 
-
 	def read_swanspc(self,fname,swantime):
 
-		# Check dates. Only one value can be used for now.
+		""" 
+		    Use this function to read data generated with the SPECOUT command.
+		    
+		    The sixtase MUST be :
+		    'SPECOUT 'Location' SPEC2D ABS 'name.spc'
 
-		if np.shape(swantime) >= 1:
-			print "Only single date retrives can be handle"
-			# sys.exit()
+		    Read the documentation in http://swanmodel.sourceforge.net to more details on spectral output.
+
+		    Inputs
+		    fname:    the name of the file
+		    swantime: a date and time string in swans's format
+
+		    Outputs
+		    lon:    longitude of the point
+		    lat:    latitude of the point
+		    nfreqs: number of frequencies
+		    freqs:  list of frequencies
+		    ndirs:  number of directions
+		    dirs:   list of directions
+		    spectra: array with spectral data (frequencies,directions)
+		"""
+
+		# I/O check
+		self.iocheck(fname)
 
 		f = open(fname,'r').readlines()
 
+		# Time check
+		check = False
+		for line in f:
+			if swantime in line:
+				check = True
+				break
+		if check:
+			pass
+		else:
+			raise ValueError('It seems the date requested is not present in the file.') 
 		
 		for l,line in enumerate(f):
-
 
 			# Heading the headers
 			if "TIME" in line:
@@ -124,13 +168,11 @@ class SwanIO:
 						ds = l.split()[0]
 						dirs.append(float(ds))
 
-
 			# Read the spectrum for a given date
 			elif swantime in line:
 				factor = float(f[l+2])
 				start  = l+3
 				end    = l+nfreqs+2
-				print start, end
 				LINES=[]
 				for i,lines in enumerate(f):
 					if i >= start and i <= end:
@@ -140,20 +182,54 @@ class SwanIO:
 				for block in LINES:
 					for strs in block:
 						VALUES.append(float(strs))
-				Ssectrum=np.reshape(VALUES,(nfreqs,ndirs))*factor
-				# print factor
-				# print l
+				spectra=np.reshape(VALUES,(nfreqs,ndirs))*factor
+
+		return lon,lat,nfreqs,freqs,ndirs,dirs,spectra
 
 
-				# freqs  = l[line+2:line+nfreqs+1]
-				# print start,end
+class SwanPlots:
 
-
-
-
-
-
-		# pass
+	def simple_spectralplot(self,freqs,dirs,spectra):
+		""" Simple spectral plot """
+		# Spectral space
+		# D,F = np.meshgrid(np.linspace(360,0,ndirs),np.linspace(0,0.5,nfreqs)*0.5)
+		# Or use the original
+		D,F   = np.meshgrid(np.linspace(360,0,len(dirs)),freqs)
+		theta = np.radians(D-90)
+		#
+		# Normalize data
+		nspectra=spectra/spectra.max()
+		#
+		# Set the colormap
+		cmap = pylab.cm.get_cmap('jet',20)
+		lims = np.linspace(0,1,21,endpoint=True)
+		tks  = np.linspace(0,1,11,endpoint=True)
+		norm = pylab.mpl.colors.BoundaryNorm(lims,cmap.N)
+		# Set the plot
+		fig,ax = plt.subplots(subplot_kw=dict(projection='polar'))
+		circle = plt.Circle((0,0),.035,color='w',transform=ax.transData._b)
+		# Corrects referential
+		ax.set_theta_zero_location("N")
+		ax.set_theta_direction(-1)
+		# Draw the plot 
+		spc = ax.contourf(theta,F,nspectra,cmap=cmap,levels=lims)
+		# Draw Grid
+		ax.grid(True,color='w')
+		# Draw the circle
+		ax.add_artist(circle)
+		# Adjust Colorbar
+		cb=plt.colorbar(spc,ax=ax,ticks=tks,orientation='horizontal',shrink=0.65, 
+	                             extend='both',norm=norm)
+		cb.set_clim(0,1)
+		cb.set_label(r'$Normalized$ $Variance$ $Density$ $(m^{-2}.s^{-1}.deg^{-1})$')
+		# Mask labels to show periods instead of frequencies
+		ax.set_yticklabels(map(str,[20.0,10.0,6.6,5.0]))
+		# Mask xlabels
+		ax.set_xticklabels(['N','NE','E','SE','S','SW','W','NW'])
+		ax.tick_params(axis='y',colors='w')
+		#
+		# show
+		plt.show()
 
 
 # Utils
@@ -168,6 +244,9 @@ def find_nearest(target,val):
 	min_idx, min_val     = min(enumerate(difs), key=operator.itemgetter(1))
 	out                  = target[min_idx]
 	return min_idx, out
+
+
+#  Utils
 			
 def swantime2datetime(time,inverse=False):
 	
@@ -191,30 +270,57 @@ def swantime2datetime(time,inverse=False):
 		return dtime
 
 
+def nearest_point(tx,ty,x,y):
+
+	txy = zip(tx,ty)
+	xy  = zip(x,y)
+
+	# Using scipy.spatial.cKDTree for the search
+
+	tree          = scipy.spatial.cKDTree(txy)
+	dist, indexes = tree.query(xy)
+
+	return dist, indexes
 
 
-
-	
 if __name__ == "__main__":
 
-	# Reading data
+	### Some examples ####
 
-	reader = SwanIO()
+	# Reading data
+	reader  = SwanIO()
+
+	# Reading TABLE dada without headers:
 	headers = ["TIME","HSIGN","HSWELL","PDIR","DIR","TPS","PER","WINDX","WINDY","PROPAGAT"]
 	table1  = reader.read_swantable('Boia_Minuano_1998.txt',headers=headers)
+	
+	# Reading TABLE with headers:
 	table2  = reader.read_swantable('Boia_Minuano_H_1998.txt')
+	
+	# Reading spectral data
+	t       = swantime2datetime([729390,],inverse=True)
+	lon,lat,nfreqs,freqs,ndirs,dirs,spectra = reader.read_swanspc('Boia_Minuano_1998.spc',t[0])
+	
 
-	t = swantime2datetime([729390,],inverse=True)
-
-	spc = reader.read_swanspc('Boia_Minuano_1998.spc',t)
-
-
-
+	# Ploting data
+	# sp = SwanPlots()
+	
+	# Plot spectral data
+	# sp.simple_spectralplot(freqs,dirs,spectra)
 
 	# Utils	
-	t = np.array([1,2,3,4,5,6,7,8,9])
-	v = 5.6
-	idx,vt = find_nearest(t,v)
+
+	lat    = np.arange(-40,-10,0.25)
+	lon    = np.arange(-60,-40,0.25)
+	plats  = np.array([-15.65,-25.25,-12.45])
+	plons  = np.array([-35.20,-55.27,-30.10])
+
+	nearest_point(lon,lat,plons,plats)
+
+
+	# t = np.array([1,2,3,4,5,6,7,8,9])
+	# v = 5.6
+	# idx,vt = find_nearest(t,v)
 #	print idx,vt
 
 
