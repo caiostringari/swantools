@@ -21,6 +21,8 @@ import os.path
 import operator
 import datetime
 import pylab
+
+import scipy.io
 import scipy.spatial
 
 import numpy  as np
@@ -29,6 +31,9 @@ import matplotlib.pyplot as plt
 
 
 from matplotlib.dates import num2date,date2num 
+
+#
+#
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -187,6 +192,61 @@ class SwanIO:
 		return lon,lat,nfreqs,freqs,ndirs,dirs,spectra
 
 
+
+	def read_swanblock(self,fname,basename,time=False,stat=False):
+
+		# Reading ths data causes to some useless warnigs to be printed,
+		# removing it using "brute-force"
+		import warnings
+		warnings.filterwarnings("ignore")
+
+		# I/O check
+		self.iocheck(fname)
+
+
+		block = scipy.io.loadmat(fname)
+		keys  = block.keys()
+
+		if stat:
+		
+			print 'Not implemented yet'
+
+		else:
+
+			if time:
+				
+				var = basename+"_"+time.replace('.','_')+"00"
+
+				for k in keys:
+					if var in keys:
+						z = scipy.io.loadmat(fname)[var]
+						return z
+						break
+					else:
+						raise ValueError('It seems the variable requested is \
+						                  not present in the file.')
+
+			else:
+
+				var = basename
+
+				for k in keys:
+					if var in keys:
+						z   = scipy.io.loadmat(fname)[var]
+						return z
+						break
+					else:
+						raise ValueError('It seems the variable requested is \
+							              not present in the file.')
+
+
+
+		# for k in keys: print k
+
+
+
+
+
 class SwanPlots:
 
 	def simple_spectralplot(self,freqs,dirs,spectra):
@@ -283,6 +343,9 @@ def nearest_point(tx,ty,x,y):
 	return dist, indexes
 
 
+
+
+
 if __name__ == "__main__":
 
 	### Some examples ####
@@ -292,15 +355,22 @@ if __name__ == "__main__":
 
 	# Reading TABLE dada without headers:
 	headers = ["TIME","HSIGN","HSWELL","PDIR","DIR","TPS","PER","WINDX","WINDY","PROPAGAT"]
-	table1  = reader.read_swantable('Boia_Minuano_1998.txt',headers=headers)
+	table1  = reader.read_swantable('../data/Boia_Minuano_1998.txt',headers=headers)
 	
 	# Reading TABLE with headers:
-	table2  = reader.read_swantable('Boia_Minuano_H_1998.txt')
+	table2  = reader.read_swantable('../data/Boia_Minuano_H_1998.txt')
 	
 	# Reading spectral data
 	t       = swantime2datetime([729390,],inverse=True)
-	lon,lat,nfreqs,freqs,ndirs,dirs,spectra = reader.read_swanspc('Boia_Minuano_1998.spc',t[0])
+	lon,lat,nfreqs,freqs,ndirs,dirs,spectra = reader.read_swanspc('../data/Boia_Minuano_1998.spc',t[0])
 	
+	# Reading a block file
+	# Hs example
+	HS = reader.read_swanblock('../data/RegSouth.1998.mat','Hsig',time='19980101.0000')
+	# X, Y, Z Coordinates example
+	lon = reader.read_swanblock('../data/RegSouth.1998.mat','Xp')
+	lat = reader.read_swanblock('../data/RegSouth.1998.mat','Yp')
+	dep = reader.read_swanblock('../data/RegSouth.1998.mat','Botlev')
 
 	# Ploting data
 	# sp = SwanPlots()
@@ -315,7 +385,7 @@ if __name__ == "__main__":
 	plats  = np.array([-15.65,-25.25,-12.45])
 	plons  = np.array([-35.20,-55.27,-30.10])
 
-	nearest_point(lon,lat,plons,plats)
+	indx,dists = nearest_point(lon,lat,plons,plats)
 
 
 	# t = np.array([1,2,3,4,5,6,7,8,9])
