@@ -1,5 +1,4 @@
 # swantools
-=======
 
 This repository gathers some useful functions and tools to be used alongside SWAN wave model.
 
