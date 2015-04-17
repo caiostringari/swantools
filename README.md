@@ -10,15 +10,15 @@ To easily install the module just do:
 sudo pip install swantools
 ```
 
-or download the source code and install with
+alternatively, download the source code and install with:
 
 ```bash
 sudo setup.py install
 ```
 
-Nowadays, there are a I/O class which can handle TABLE, SPECOUT and BLOCK outputs. In the future, it will be possible to write spectral boundary conditions, TPAR files and initial conditions.
+Nowadays, there is a I/O class which can handle TABLE, SPECOUT and BLOCK outputs. In the future, it will be possible to write spectral boundary conditions, TPAR files and initial conditions.
 
-In use the I/O structure for reading a TABLE with HEAD option do:
+For example, to use the I/O structure for reading a TABLE with HEAD option do:
 
 ```python
 
