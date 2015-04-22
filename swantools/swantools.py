@@ -16,6 +16,8 @@ __license__ = 'GPL2'
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Global Imports
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 import sys,os
 import os.path
 import operator
@@ -191,9 +193,16 @@ class SwanIO:
 
 		return lon,lat,nfreqs,freqs,ndirs,dirs,spectra
 
-
-
 	def read_swanblock(self,fname,basename,time=False,stat=False):
+
+		"""
+			Function to read SWAN's BLOCK output statment. Both stationary
+			and non-stationary versions can be handled there. If requesting
+			a non-stationary output a proper date string shoudl be given.
+			In case of non-stationary data with no dates, such as XP or YP,
+			just call the function as if it were stationary.
+			will return a numpy array with [Xp,Yp] dimension.
+		"""
 
 		# Reading ths data causes to some useless warnigs to be printed,
 		# removing it using "brute-force"
@@ -203,13 +212,13 @@ class SwanIO:
 		# I/O check
 		self.iocheck(fname)
 
-
 		block = scipy.io.loadmat(fname)
 		keys  = block.keys()
 
 		if stat:
-		
-			print 'Not implemented yet'
+			var = basename
+			z   = scipy.io.loadmat(fname)[var]
+			return z
 
 		else:
 
@@ -219,13 +228,12 @@ class SwanIO:
 
 				for k in keys:
 					if var in keys:
-						z = scipy.io.loadmat(fname)[var]
+						z   = scipy.io.loadmat(fname)[var]
 						return z
 						break
 					else:
 						raise ValueError('It seems the variable requested is \
 						                  not present in the file.')
-
 			else:
 
 				var = basename
@@ -238,13 +246,6 @@ class SwanIO:
 					else:
 						raise ValueError('It seems the variable requested is \
 							              not present in the file.')
-
-
-
-		# for k in keys: print k
-
-
-
 
 
 class SwanPlots:
@@ -291,6 +292,17 @@ class SwanPlots:
 		# show
 		plt.show()
 
+	def simple_blockplot(self,x,y,z,title):
+		plt.figure()
+		cmap = pylab.cm.jet
+		plt.pcolormesh(x,y,z,cmap=cmap,vmin=z.min(),vmax=z.max())
+		plt.colorbar()
+		plt.title(title)
+		plt.xlim([x.min(),x.max()])
+		plt.ylim([y.min(),y.max()])
+		plt.grid()
+		plt.show()
+
 
 # Utils
 
@@ -305,11 +317,9 @@ def find_nearest(target,val):
 	out                  = target[min_idx]
 	return min_idx, out
 
-
-#  Utils
 			
 def swantime2datetime(time,inverse=False):
-	
+
 	"""
 		Translating Swans's time strings to datetimes and vice-versa.
 		See datetime and num2date documentation for more information.
@@ -364,19 +374,24 @@ if __name__ == "__main__":
 	t       = swantime2datetime([729390,],inverse=True)
 	lon,lat,nfreqs,freqs,ndirs,dirs,spectra = reader.read_swanspc('../data/Boia_Minuano_1998.spc',t[0])
 	
-	# Reading a block file
-	# Hs example
-	HS = reader.read_swanblock('../data/RegSouth.1998.mat','Hsig',time='19980101.0000')
-	# X, Y, Z Coordinates example
-	lon = reader.read_swanblock('../data/RegSouth.1998.mat','Xp')
-	lat = reader.read_swanblock('../data/RegSouth.1998.mat','Yp')
-	dep = reader.read_swanblock('../data/RegSouth.1998.mat','Botlev')
+	# Reading a block file - Non stationary example
+	hs1 = reader.read_swanblock('../data/nonstat_block.mat','Hsig',time='19980105.0000')
+	# Coordinates example
+	lon = reader.read_swanblock('../data/nonstat_block.mat','Xp')
+	lat = reader.read_swanblock('../data/nonstat_block.mat','Yp')
+	dep = reader.read_swanblock('../data/nonstat_block.mat','Botlev')
+	# Stationary example
+	hs2 = reader.read_swanblock('../data/stat_block.mat','Hsig',stat=True)
+	
 
 	# Ploting data
-	# sp = SwanPlots()
+	sp = SwanPlots()
 	
 	# Plot spectral data
 	# sp.simple_spectralplot(freqs,dirs,spectra)
+
+	# Simple block plot
+	sp.simple_blockplot(lon,lat,hs2,'Bottom')
 
 	# Utils	
 
