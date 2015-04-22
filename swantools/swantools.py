@@ -304,7 +304,31 @@ class SwanPlots:
 		plt.show()
 
 
-# Utils
+# Swan Utils
+
+class SwanUtils()
+	
+	def swantime2datetime(self,time,inverse=False):
+		"""
+			Translating Swans's time strings to datetimes and vice-versa.
+			See datetime and num2date documentation for more information.
+		"""
+		
+		fmt = "%Y%m%d.%H%M%S"
+
+		dtime = []
+		stime = []
+		
+		if inverse:
+			for date in time:
+				stime.append(datetime.datetime.strftime(num2date(date),fmt))
+				return stime
+		else:
+			for date in time:
+				dtime.append(date2num(datetime.datetime.strptime(date,fmt)))
+			return dtime
+
+
 
 def find_nearest(target,val):
 
@@ -316,29 +340,6 @@ def find_nearest(target,val):
 	min_idx, min_val     = min(enumerate(difs), key=operator.itemgetter(1))
 	out                  = target[min_idx]
 	return min_idx, out
-
-			
-def swantime2datetime(time,inverse=False):
-
-	"""
-		Translating Swans's time strings to datetimes and vice-versa.
-		See datetime and num2date documentation for more information.
-	"""
-	
-	fmt = "%Y%m%d.%H%M%S"
-
-	dtime = []
-	stime = []
-	
-	if inverse:
-		for date in time:
-			stime.append(datetime.datetime.strftime(num2date(date),fmt))
-			return stime
-	else:
-		for date in time:
-			dtime.append(date2num(datetime.datetime.strptime(date,fmt)))
-		return dtime
-
 
 def nearest_point(tx,ty,x,y):
 
@@ -361,6 +362,8 @@ if __name__ == "__main__":
 	### Some examples ####
 
 	# Reading data
+	from SwanUtils import swantime2datetime
+	
 	reader  = SwanIO()
 
 	# Reading TABLE dada without headers:
