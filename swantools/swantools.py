@@ -84,7 +84,7 @@ class SwanIO:
 		if headers:
 			# Handle times
 			for line in f: dates.append(line.split()[0])
-			times        = swantime2datetime(dates)
+			times        = SwanUtils.swantime2datetime(dates)
 			# Read the table file
 			rawdata      = np.genfromtxt(fname)
 			rawdata[:,0] = times
@@ -95,7 +95,7 @@ class SwanIO:
 			# Handle times
 			for i,line in enumerate(f):
 				if i > 6: dates.append(line.split()[0])
-			times        = swantime2datetime(dates)
+			times        = SwanUtils.swantime2datetime(dates)
 			# Handle headers
 			headers     = [] 
 			for i,h in enumerate(f[4].split()):
@@ -306,8 +306,9 @@ class SwanPlots:
 
 # Swan Utils
 
-class SwanUtils()
-	
+class SwanUtils():
+
+	@classmethod
 	def swantime2datetime(self,time,inverse=False):
 		"""
 			Translating Swans's time strings to datetimes and vice-versa.
@@ -362,8 +363,8 @@ if __name__ == "__main__":
 	### Some examples ####
 
 	# Reading data
-	from SwanUtils import swantime2datetime
-	
+	from swantools import SwanUtils
+
 	reader  = SwanIO()
 
 	# Reading TABLE dada without headers:
@@ -374,7 +375,7 @@ if __name__ == "__main__":
 	table2  = reader.read_swantable('../data/Boia_Minuano_H_1998.txt')
 	
 	# Reading spectral data
-	t       = swantime2datetime([729390,],inverse=True)
+	t       = SwanUtils.swantime2datetime([729390,],inverse=True)
 	lon,lat,nfreqs,freqs,ndirs,dirs,spectra = reader.read_swanspc('../data/Boia_Minuano_1998.spc',t[0])
 	
 	# Reading a block file - Non stationary example
