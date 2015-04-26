@@ -23,6 +23,7 @@ import os.path
 import operator
 import datetime
 import pylab
+import math
 
 import scipy.io
 import scipy.spatial
@@ -329,7 +330,24 @@ class SwanUtils():
 				dtime.append(date2num(datetime.datetime.strptime(date,fmt)))
 			return dtime
 
+	@classmethod
+	def dir2cat(self,theta):
+		""" Given a array of directions, will return the respective
+		    categoreis (N,S,E,W, ect..). Credits to Eric Nardi.
+		"""
+		categories = ['N', 'NNE', 'NE', 'ENE',
+		              'E', 'ESE', 'SE', 'SSE',
+		              'S', 'SSW', 'SW', 'WSW',
+		              'W', 'WNW', 'NW', 'NNW']
+		# print theta
+		interval = 360.0/len(categories)
+		idx      = np.floor((theta+interval/2)%360/interval)
+		cat      = []
+		for i in idx: cat.append(categories[int(i)])
+		return cat
 
+
+# Package functions
 
 def find_nearest(target,val):
 
@@ -353,9 +371,6 @@ def nearest_point(tx,ty,x,y):
 	dist, indexes = tree.query(xy)
 
 	return dist, indexes
-
-
-
 
 
 if __name__ == "__main__":
@@ -395,9 +410,14 @@ if __name__ == "__main__":
 	# sp.simple_spectralplot(freqs,dirs,spectra)
 
 	# Simple block plot
-	sp.simple_blockplot(lon,lat,hs2,'Bottom')
+	# sp.simple_blockplot(lon,lat,hs2,'Bottom')
 
-	# Utils	
+	# Utils
+	dirs = np.arange(0, 360, 10)
+	cats = SwanUtils.dir2cat(dirs)
+	print cats
+
+
 
 	lat    = np.arange(-40,-10,0.25)
 	lon    = np.arange(-60,-40,0.25)
