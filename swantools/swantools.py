@@ -46,7 +46,7 @@ class SwanIO:
 
 	def __init__(self):
 		pass
-
+		
 	def iocheck(self,fname):
 		io = os.path.isfile(fname)
 		if io:
@@ -218,8 +218,14 @@ class SwanIO:
 
 		if stat:
 			var = basename
-			z   = scipy.io.loadmat(fname)[var]
-			return z
+			for key in keys:
+				if var in keys:
+					z   = scipy.io.loadmat(fname)[var]
+					return z
+				else:
+					raise ValueError('It seems the variable requested is \
+						                  not present in the file.')
+
 
 		else:
 
@@ -346,6 +352,21 @@ class SwanUtils():
 		for i in idx: cat.append(categories[int(i)])
 		return cat
 
+	@classmethod
+	def deg2uv(sefl,direction,intensity=False):
+		"""
+		Givean an array of directions will return the U and V
+		components. intensity is optional.
+		"""
+		rad = 4.0*np.arctan(1.0)/180.
+		if intensity:
+			u   = -intensity*np.sin(direction*rad)
+			v   = -intensity*np.cos(direction*rad)
+		else:
+			u   = np.sin(direction*rad)
+			v   = np.cos(direction*rad)
+		return u,v
+
 
 # Package functions
 
@@ -415,8 +436,10 @@ if __name__ == "__main__":
 	# Utils
 	dirs = np.arange(0, 360, 10)
 	cats = SwanUtils.dir2cat(dirs)
-	print cats
+	# print cats
 
+	dp  = reader.read_swanblock('../data/stat_block.mat','PkDir',stat=True)
+	u,v = SwanUtils.deg2uv(dp)
 
 
 	lat    = np.arange(-40,-10,0.25)
