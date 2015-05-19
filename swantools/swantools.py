@@ -254,6 +254,39 @@ class SwanIO:
 						raise ValueError('It seems the variable requested is \
 							              not present in the file.')
 
+	def write_tpar(self,data,fname='tpar'):
+
+		""" 
+			Given an array Nx5, where N is the number of timestamps and
+			the columns are respecvely, TIME, HS, TP, DP, SP, this function
+			will write TPAR formated  file named *fname*.
+		"""
+
+		# check data dimensions
+		if data.shape[1] == 5:
+			pass
+		else:
+			raise ValueError('You MUST give HS, TP, DP and SP \
+			                          (in this order) information.')
+
+		f = open(fname,'w')
+
+		# Write header
+		f.write("TPAR \n")
+
+		# Timeloop
+		times = SwanUtils.swantime2datetime(data[:,0],inverse=True)
+		for t,time in enumerate(times):
+
+			hs = str(abs(np.round(data[t,1],2)))
+			tp = str(abs(np.round(data[t,2],2)))
+			dp = str(abs(np.round(data[t,3],2)))
+			sp = str(abs(np.round(data[t,4],2)))
+
+			tpar = time+" {0} {1} {2} {3} \n".format(hs,tp,dp,sp)
+
+			f.write(tpar)
+
 
 class SwanPlots:
 
@@ -330,7 +363,7 @@ class SwanUtils():
 		if inverse:
 			for date in time:
 				stime.append(datetime.datetime.strftime(num2date(date),fmt))
-				return stime
+			return stime
 		else:
 			for date in time:
 				dtime.append(date2num(datetime.datetime.strptime(date,fmt)))
@@ -358,10 +391,10 @@ class SwanUtils():
 		Givean an array of directions will return the U and V
 		components. intensity is optional.
 		"""
-		rad = 4.0*np.arctan(1.0)/180.
+		rad = -4.0*np.arctan(1.0)/180.
 		if intensity:
-			u   = -intensity*np.sin(direction*rad)
-			v   = -intensity*np.cos(direction*rad)
+			u   = intensity*np.sin(direction*rad)
+			v   = intensity*np.cos(direction*rad)
 		else:
 			u   = np.sin(direction*rad)
 			v   = np.cos(direction*rad)
@@ -422,6 +455,23 @@ if __name__ == "__main__":
 	dep = reader.read_swanblock('../data/nonstat_block.mat','Botlev')
 	# Stationary example
 	hs2 = reader.read_swanblock('../data/stat_block.mat','Hsig',stat=True)
+
+	# Writing TPAR files
+
+	writer  = SwanIO()
+
+
+	t  = table2["Time"]
+	hs = table2["Hsig"]
+	dp = table2["PkDir"]
+	tp = table2["TPsmoo"]
+	sp = np.ones(len(t))*30
+	# print h
+	data = np.vstack([t,hs,tp,dp,sp]).T
+	
+	writer.write_tpar(data,'../data/tpartest.tpar')
+	
+	sys.exit()
 	
 
 	# Ploting data
