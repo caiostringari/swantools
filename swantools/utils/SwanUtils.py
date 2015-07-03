@@ -1,10 +1,10 @@
 import datetime
-from matplotlib.dates import num2date,date2num
+import numpy as np
 
 def swantime2datetime(time,inverse=False):
 	"""
 		Translating Swans's time strings to datetimes and vice-versa.
-		See datetime and num2date documentation for more information.
+		See datetime module more information.
 	"""
 
 	fmt = "%Y%m%d.%H%M%S"
@@ -14,11 +14,11 @@ def swantime2datetime(time,inverse=False):
 
 	if inverse:
 		for date in time:
-			stime.append(datetime.datetime.strftime(num2date(date),fmt))
+			stime.append(datetime.datetime.strftime(date,fmt))
 		return stime
 	else:
 		for date in time:
-			dtime.append(date2num(datetime.datetime.strptime(date,fmt)))
+			dtime.append(datetime.datetime.strptime(date,fmt))
 		return dtime
 
 
