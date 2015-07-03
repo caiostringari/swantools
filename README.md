@@ -4,13 +4,7 @@ This repository gathers some useful functions and tools to be used alongside SWA
 
 For downloading, installing  and using SWAN, please see: http://swanmodel.sourceforge.net/
 
-To easily install the module just do:
-
-```bash
-sudo pip install swantools
-```
-
-alternatively, download the latest source code and install with:
+To install the module, fork or download the source code and run:
 
 ```bash
 sudo setup.py install
