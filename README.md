@@ -1,4 +1,6 @@
-# swantools
+# swantools is deprecated.
+
+# Please to the oceanwaves package https://github.com/openearth/oceanwaves-python
 
 This repository gathers some useful functions and tools to be used alongside SWAN wave model.
 
